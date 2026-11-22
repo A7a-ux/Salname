@@ -1,0 +1,949 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#edf0f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a101d" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Salname">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Salname Ring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Noto+Sans+Arabic:wght@400..700&display=swap">
+<style>
+/* Layout: one circular dial (year hub, month ring, moon ring, day ring, reminder ring) beside a day and overview panel; stacked on phones. */
+:root {
+  --display: "Bricolage Grotesque", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --ku: "Noto Sans Arabic", "Segoe UI", Tahoma, "Geeza Pro", sans-serif;
+  --bg: #edf0f5;
+  --surface: #f7f9fc;
+  --ring: #dfe5ef;
+  --ring-2: #d0d9e8;
+  --ring-wk: #e8e2d1;
+  --line: #b9c4d8;
+  --ink: #142033;
+  --ink-2: #4a5972;
+  --accent: #e3a42b;
+  --accent-ink: #8a5a06;
+  --on-accent: #1a1305;
+  --today: #187a5a;
+  --wk-ink: #8a5a06;
+  --moon-dark: #3a4a6b;
+  --moon-lit: #fbf3d3;
+  --on-mood: #14202e;
+  --m-radiant: #e0a21f;
+  --m-calm: #2fa27a;
+  --m-okay: #4a8ddb;
+  --m-low: #8b76cf;
+  --m-stormy: #d4566a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a101d;
+    --surface: #111a2c;
+    --ring: #172238;
+    --ring-2: #1f2f4d;
+    --ring-wk: #272336;
+    --line: #2d3d5c;
+    --ink: #e8edf7;
+    --ink-2: #9eabc5;
+    --accent: #f0b94a;
+    --accent-ink: #f2be55;
+    --on-accent: #1a1305;
+    --today: #4cc9a1;
+    --wk-ink: #f0b74a;
+    --moon-dark: #0b1322;
+    --moon-lit: #f1e9c9;
+    --m-radiant: #f0b73a;
+    --m-calm: #45c298;
+    --m-okay: #6aa6ee;
+    --m-low: #a692e8;
+    --m-stormy: #ee728a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0a101d;
+  --surface: #111a2c;
+  --ring: #172238;
+  --ring-2: #1f2f4d;
+  --ring-wk: #272336;
+  --line: #2d3d5c;
+  --ink: #e8edf7;
+  --ink-2: #9eabc5;
+  --accent: #f0b94a;
+  --accent-ink: #f2be55;
+  --on-accent: #1a1305;
+  --today: #4cc9a1;
+  --wk-ink: #f0b74a;
+  --moon-dark: #0b1322;
+  --moon-lit: #f1e9c9;
+  --m-radiant: #f0b73a;
+  --m-calm: #45c298;
+  --m-okay: #6aa6ee;
+  --m-low: #a692e8;
+  --m-stormy: #ee728a;
+  color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--ink); font: 400 14px/1.45 var(--display); }
+* { box-sizing: border-box; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+.ku { font-family: var(--ku); direction: rtl; unicode-bidi: isolate; }
+
+.shell {
+  max-width: 1180px; margin: 0 auto;
+  padding-block: 20px 36px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; margin-bottom: 18px; }
+.brand h1 { margin: 0; font: 700 28px/1.05 var(--display); letter-spacing: -0.02em; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.brand h1 .ku { font-size: 22px; font-weight: 600; color: var(--accent-ink); }
+.brand p { margin: 6px 0 0; color: var(--ink-2); max-width: 46ch; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg-ctl { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--surface); }
+.seg-ctl button { border: 0; background: transparent; color: var(--ink-2); padding: 7px 14px; border-radius: 999px; font-weight: 600; font-size: 13px; white-space: nowrap; }
+.seg-ctl button[aria-checked="true"], .seg-ctl button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.pill { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 14px; font-weight: 600; font-size: 13px; }
+select.pill { padding-right: 8px; }
+
+.app { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr); gap: 28px; align-items: start; }
+@media (max-width: 880px) { .app { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+.col { min-width: 0; }
+
+/* the dial */
+.stage { position: relative; width: min(100%, 660px); margin: 0 auto; aspect-ratio: 1; container-type: inline-size; }
+.stage svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.hub {
+  position: absolute; left: 50%; top: 50%; width: 28%; aspect-ratio: 1; transform: translate(-50%, -50%);
+  border-radius: 50%; background: var(--surface); border: 1px solid var(--line);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden;
+}
+.hub-cap { font-size: 1.9cqw; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); font-weight: 700; }
+.hub-alt { font-size: 2.2cqw; color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+.years {
+  width: 100%; height: 15cqw; overflow-y: auto; scroll-snap-type: y proximity; scrollbar-width: none; position: relative;
+  padding-block: 4.4cqw; text-align: center;
+  -webkit-mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent);
+  mask-image: linear-gradient(transparent, #000 28%, #000 72%, transparent);
+}
+.years::-webkit-scrollbar { display: none; }
+.years button {
+  display: block; width: 100%; height: 6.2cqw; border: 0; background: transparent; scroll-snap-align: center;
+  font: 600 4.4cqw/1 var(--display); color: var(--ink-2); font-variant-numeric: tabular-nums;
+}
+.years button.on { color: var(--accent-ink); font-weight: 800; }
+
+.legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; margin: 16px auto 0; padding: 0; list-style: none; color: var(--ink-2); font-size: 12px; max-width: 660px; }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; background: var(--ring-2); border: 1px solid var(--line); display: inline-block; }
+
+/* svg parts */
+.track { fill: none; stroke: var(--line); stroke-width: 1; opacity: 0.7; }
+.band { fill: none; stroke: var(--ring); stroke-width: 32; opacity: 0.7; }
+.seg { fill: var(--ring); stroke: transparent; stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s; }
+.hit { cursor: pointer; outline: none; }
+.month .seg { fill: var(--ring-2); }
+.month.sel .seg { fill: var(--accent); }
+.day.wk .seg { fill: var(--ring-wk); }
+.day.has-mood .seg { fill: color-mix(in srgb, var(--mc) 42%, var(--ring)); }
+.day.sel .seg { stroke: var(--accent-ink); }
+.hit:focus-visible .seg { stroke: var(--ink); }
+@media (hover: hover) { .hit:hover .seg { stroke: var(--line); } .day.sel:hover .seg { stroke: var(--accent-ink); } }
+.t-mlat { font: 700 12px var(--display); fill: var(--ink); }
+.t-mku { font: 500 10.5px var(--ku); fill: var(--ink-2); }
+.month.sel .t-mlat, .month.sel .t-mku { fill: var(--on-accent); }
+.t-num { font: 700 16px var(--display); fill: var(--ink); font-variant-numeric: tabular-nums; }
+.t-sec { font: 500 9.5px var(--display); fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+.t-sec.first { fill: var(--accent-ink); font-weight: 800; }
+.t-wd { font: 600 10px var(--ku); fill: var(--ink-2); }
+.day.wk .t-wd, .day.wk .t-num { fill: var(--wk-ink); }
+.day.sel .t-num { font-size: 18px; }
+.mdot { fill: transparent; stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 2; }
+.day.has-mood .mdot { fill: var(--mc); stroke: none; stroke-dasharray: none; }
+.tick { stroke: var(--accent-ink); stroke-width: 2; stroke-linecap: round; }
+.moon-dark { fill: var(--moon-dark); }
+.moon-lit { fill: var(--moon-lit); }
+.moon-ring { fill: none; stroke: var(--line); stroke-width: 0.8; }
+.halo { fill: none; stroke: var(--accent-ink); stroke-width: 2; }
+.pip { fill: var(--accent); stroke: var(--accent-ink); stroke-width: 0.8; }
+.pip.done { fill: transparent; stroke: var(--ink-2); }
+.today-mark { fill: var(--today); }
+.sun-c { fill: var(--accent); }
+.sun-r { stroke: var(--accent-ink); stroke-width: 1.4; stroke-linecap: round; }
+.yd .seg { stroke-width: 1.2; }
+.yd.has-mood .seg { fill: var(--mc); }
+.msep { stroke: var(--ink-2); stroke-width: 0.8; opacity: 0.55; }
+.spoke { stroke: var(--accent-ink); stroke-width: 1.6; stroke-linecap: round; }
+.ymoon.full { stroke: var(--accent-ink); stroke-width: 0.6; }
+.ypip { stroke-width: 0.5; }
+.ring-anim { animation: ringin 0.55s cubic-bezier(0.2, 0.8, 0.2, 1); transform-origin: 0 0; }
+@keyframes ringin { from { opacity: 0; transform: rotate(-9deg) scale(0.985); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ring-anim { animation: none; } .seg { transition: none; } .years { scroll-behavior: auto; } }
+
+/* side panels */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+.panel + .panel { margin-top: 16px; }
+.eyebrow { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; color: var(--ink-2); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; font-size: 12px; }
+.eyebrow .ku { text-transform: none; letter-spacing: 0; font-size: 14px; }
+.dnum { font: 800 76px/0.95 var(--display); letter-spacing: -0.04em; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.dmy { font: 700 20px/1.2 var(--display); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.dmy .ku { font-size: 17px; color: var(--accent-ink); font-weight: 600; }
+.dalt { margin-top: 6px; color: var(--ink-2); font-weight: 600; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.chip { display: inline-block; margin-top: 10px; padding: 3px 10px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 12px; }
+.moonrow { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.moonrow svg { width: 44px; height: 44px; flex: none; }
+.moonrow b { display: block; font-size: 15px; }
+.moonrow span { color: var(--ink-2); font-size: 13px; }
+.h { font: 700 12px/1 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); margin: 18px 0 10px; display: flex; justify-content: space-between; align-items: center; }
+.h button { border: 0; background: transparent; color: var(--accent-ink); font-weight: 700; font-size: 12px; letter-spacing: 0.02em; text-transform: none; padding: 2px 4px; }
+.moods { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.mood { border: 1px solid var(--line); background: transparent; border-radius: 14px; padding: 8px 2px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--ink-2); min-width: 0; }
+.mood svg { width: 30px; height: 30px; }
+.mood[aria-pressed="true"] { background: color-mix(in srgb, var(--mc) 26%, transparent); border-color: var(--mc); color: var(--ink); }
+.mood .ku { font-size: 10px; font-weight: 500; }
+.tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tasks li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; }
+.tasks input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent-ink); flex: none; }
+.tasks label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.tasks li.done label { color: var(--ink-2); text-decoration: line-through; }
+.tasks .x { border: 0; background: transparent; color: var(--ink-2); font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 8px; }
+.empty { color: var(--ink-2); margin: 0; font-size: 13px; }
+.addform { display: flex; gap: 8px; margin-top: 10px; }
+.addform input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--bg); border-radius: 12px; padding: 9px 12px; }
+.addform button { border: 0; background: var(--accent); color: var(--on-accent); font-weight: 700; border-radius: 12px; padding: 0 16px; }
+.sync { color: var(--ink-2); font-size: 12px; margin: 14px 0 0; }
+
+.tabs { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.tabs h2 { margin: 0; font: 700 17px var(--display); }
+.bar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--ring); gap: 2px; }
+.bar i { display: block; background: var(--mc); min-width: 6px; }
+.tally { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 10px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--ink-2); font-weight: 600; }
+.tally li { display: inline-flex; align-items: center; gap: 6px; }
+.tally i { width: 10px; height: 10px; border-radius: 50%; background: var(--mc); display: inline-block; }
+.stat { color: var(--ink-2); margin: 12px 0 0; }
+.agenda { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.agenda button { width: 100%; text-align: left; border: 1px solid var(--line); background: transparent; border-radius: 12px; padding: 8px 10px; display: grid; grid-template-columns: 2.6rem minmax(0, 1fr); gap: 10px; align-items: start; }
+.agenda b { font-variant-numeric: tabular-nums; }
+.agenda small { display: block; color: var(--ink-2); font-weight: 600; }
+.agenda span { overflow-wrap: anywhere; }
+.agenda .d { text-decoration: line-through; color: var(--ink-2); }
+.hm-wrap { overflow-x: auto; }
+.hm { display: grid; grid-template-columns: 4.6rem repeat(31, minmax(8px, 1fr)); gap: 2px; align-items: center; min-width: 0; }
+.hm-l { font: 600 11px var(--display); text-align: left; background: none; border: 0; color: var(--ink-2); padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hm-l.on { color: var(--accent-ink); font-weight: 800; }
+.hc { aspect-ratio: 1; border-radius: 2px; border: 0; padding: 0; background: var(--ring); position: relative; min-width: 0; }
+.hc.m { background: var(--mc); }
+.hc.t::after { content: ""; position: absolute; inset: 33%; border-radius: 50%; background: var(--on-mood); opacity: 0.8; }
+.hc.sel { outline: 2px solid var(--accent-ink); outline-offset: 1px; }
+.hc.today { box-shadow: 0 0 0 1.5px var(--today); }
+.hc.x { visibility: hidden; }
+.hm-note { font-size: 12px; color: var(--ink-2); margin: 10px 0 0; }
+.addform { flex-wrap: wrap; }
+.addform #taskInput { flex: 1 1 100%; }
+.addform #taskTime { flex: 0 0 8.4rem; }
+.addform select { flex: 1 1 8rem; min-width: 0; border: 1px solid var(--line); background: var(--bg); border-radius: 12px; padding: 9px 10px; }
+.addform button { padding: 9px 20px; }
+.tasks li { display: block; }
+.trow { display: flex; align-items: center; gap: 10px; }
+.tmeta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; padding-left: 28px; }
+.tmeta input, .tmeta select { border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 5px 8px; font-size: 13px; }
+.tmeta button { border: 1px solid var(--line); background: transparent; border-radius: 10px; padding: 5px 10px; font-size: 12px; font-weight: 600; color: var(--accent-ink); }
+.alertnote { color: var(--ink-2); font-size: 12px; margin: 8px 0 0; }
+#notifBtn { margin-top: 8px; }
+.ics { margin-top: 12px; }
+.agenda .at { color: var(--accent-ink); font-weight: 700; margin-right: 6px; font-variant-numeric: tabular-nums; }
+.toasts { position: fixed; left: 0; right: 0; bottom: 0; display: grid; gap: 8px; justify-content: center; z-index: 20; pointer-events: none;
+  padding-top: 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.toast { pointer-events: auto; display: flex; gap: 12px; align-items: center; justify-content: space-between; background: var(--ink); color: var(--bg); border-radius: 14px; padding: 12px 14px; width: min(100%, 460px); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28); }
+.toast span { display: block; opacity: 0.8; font-size: 12px; }
+.toast button { border: 0; background: var(--accent); color: var(--on-accent); font-weight: 700; border-radius: 10px; padding: 7px 12px; }
+</style>
+
+</head>
+<body>
+<main class="shell">
+  <header class="top">
+    <div class="brand">
+      <h1>Salname <span class="ku" lang="ckb">ساڵنامە</span></h1>
+      <p>A dial calendar in Gregorian and Kurdish solar years, with a moon for every day, a mood for how it felt, and reminders around the edge.</p>
+    </div>
+    <div class="controls">
+      <div class="seg-ctl" role="radiogroup" aria-label="Calendar">
+        <button type="button" role="radio" id="modeG" data-act="mode" data-v="g" aria-checked="true">Gregorian</button>
+        <button type="button" role="radio" id="modeK" data-act="mode" data-v="k" aria-checked="false">Kurdish <span class="ku" lang="ckb">کوردی</span></button>
+      </div>
+      <div class="seg-ctl" role="radiogroup" aria-label="Dial range">
+        <button type="button" role="radio" id="viewM" data-act="view" data-v="month" aria-checked="true">Month</button>
+        <button type="button" role="radio" id="viewY" data-act="view" data-v="year" aria-checked="false">Whole year</button>
+      </div>
+      <div class="seg-ctl" role="radiogroup" aria-label="What sits at the top of the dial">
+        <button type="button" role="radio" id="orS" data-act="orient" data-v="sel" aria-checked="true">Selected on top</button>
+        <button type="button" role="radio" id="orF" data-act="orient" data-v="start" aria-checked="false">Start on top</button>
+      </div>
+      <select class="pill" id="region" aria-label="Region (week start and weekend)">
+        <option value="krg">Kurdistan Region</option>
+        <option value="iq">Iraq</option>
+        <option value="eu">Europe / UK</option>
+        <option value="us">United States</option>
+      </select>
+      <button type="button" class="pill" data-act="today">Today</button>
+    </div>
+  </header>
+
+  <div class="app">
+    <section class="col" aria-label="Calendar dial">
+      <div class="stage" id="stage">
+        <svg id="wheel" viewBox="-300 -300 600 600" role="group" aria-label="Calendar dial. Outer ring: reminders. Then days, moon phases, months. Year in the centre."></svg>
+        <div class="hub" id="hub">
+          <div class="hub-cap" id="hubCap">Gregorian</div>
+          <div class="years" id="years" role="listbox" aria-label="Year"></div>
+          <div class="hub-alt" id="hubAlt"></div>
+        </div>
+      </div>
+      <ul class="legend" aria-label="How to read the dial">
+        <li><i></i>Centre: year</li>
+        <li><i></i>Ring 1: month</li>
+        <li><i></i>Ring 2: moon each day</li>
+        <li><i></i>Ring 3: day, weekday, mood</li>
+        <li><i></i>Edge: reminders</li>
+      </ul>
+    </section>
+
+    <aside class="col" aria-label="Selected day and overview">
+      <section class="panel" aria-live="polite">
+        <div id="dayHead"></div>
+        <div id="dayMoon" class="moonrow"></div>
+        <div class="h"><span>How did it feel</span><button type="button" data-act="clear-mood" id="clearMood" hidden>Clear</button></div>
+        <div class="moods" id="moods" role="group" aria-label="Mood for this day"></div>
+        <div class="h"><span>Reminders</span></div>
+        <ul class="tasks" id="taskList"></ul>
+        <form class="addform" id="addForm" autocomplete="off">
+          <input id="taskInput" type="text" maxlength="120" placeholder="What should I remind you about?" aria-label="New reminder">
+          <input id="taskTime" type="time" required aria-label="Time of the reminder">
+          <select id="taskLead" aria-label="When to alert you">
+            <option value="0">At the time</option>
+            <option value="10" selected>10 min before</option>
+            <option value="30">30 min before</option>
+            <option value="60">1 hour before</option>
+            <option value="1440">1 day before</option>
+          </select>
+          <button type="submit">Add</button>
+        </form>
+        <p class="alertnote" id="alertNote"></p>
+        <button type="button" class="pill" id="notifBtn" data-act="notif" hidden>Turn on phone alerts</button>
+        <p class="sync" id="sync">Saved on this device</p>
+      </section>
+
+      <section class="panel">
+        <div class="tabs">
+          <h2 id="ovTitle">Overview</h2>
+          <div class="seg-ctl" role="group" aria-label="Overview range">
+            <button type="button" data-act="tab" data-v="month" aria-pressed="true">Month</button>
+            <button type="button" data-act="tab" data-v="year" aria-pressed="false">Year</button>
+          </div>
+        </div>
+        <div id="overview"></div>
+      </section>
+    </aside>
+  </div>
+</main>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+'use strict';
+/*CAL-START*/
+var MS = 86400000;
+function p2(n) { return String(n).padStart(2, '0'); }
+function utc(y, m, d) { return Date.UTC(y, m, d); }
+function iso(ts) { var d = new Date(ts); return d.getUTCFullYear() + '-' + p2(d.getUTCMonth() + 1) + '-' + p2(d.getUTCDate()); }
+function isLeap(y) { return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0; }
+var KM_LEN = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+/* Kurdish solar year K begins on 21 March of Gregorian year K-700 (Newroz). */
+function kLens(ky) { var l = KM_LEN.slice(); if (isLeap(ky - 700 + 1)) l[11] = 30; return l; }
+function toKurdish(ts) {
+  var g = new Date(ts).getUTCFullYear();
+  if (ts < utc(g, 2, 21)) g--;
+  var off = Math.round((ts - utc(g, 2, 21)) / MS), lens = kLens(g + 700), m = 0;
+  while (m < 11 && off >= lens[m]) { off -= lens[m]; m++; }
+  return { y: g + 700, m: m, d: off + 1 };
+}
+function kStart(ky, m) { var lens = kLens(ky), off = 0; for (var i = 0; i < m; i++) off += lens[i]; return utc(ky - 700, 2, 21) + off * MS; }
+function viewOf(ts, mode) {
+  if (mode === 'g') { var d = new Date(ts); return { y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate() }; }
+  return toKurdish(ts);
+}
+function monthInfo(mode, y, m) {
+  if (mode === 'g') return { start: utc(y, m, 1), n: new Date(utc(y, m + 1, 0)).getUTCDate() };
+  return { start: kStart(y, m), n: kLens(y)[m] };
+}
+function moonPhase(ts) {
+  var jd = (ts + 9 * 3600000) / 86400000 + 2440587.5;
+  var a = ((jd - 2451550.26) / 29.530588853) % 1;
+  return a < 0 ? a + 1 : a;
+}
+function moonName(p) {
+  if (p < 0.03 || p >= 0.97) return 'New moon';
+  if (p < 0.22) return 'Waxing crescent';
+  if (p < 0.28) return 'First quarter';
+  if (p < 0.47) return 'Waxing gibbous';
+  if (p < 0.53) return 'Full moon';
+  if (p < 0.72) return 'Waning gibbous';
+  if (p < 0.78) return 'Last quarter';
+  return 'Waning crescent';
+}
+/*CAL-END*/
+/*ICS-START*/
+function icsEsc(s) { return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+function icsStamp(d) { return d.getUTCFullYear() + p2(d.getUTCMonth() + 1) + p2(d.getUTCDate()) + 'T' + p2(d.getUTCHours()) + p2(d.getUTCMinutes()) + p2(d.getUTCSeconds()) + 'Z'; }
+function icsLocal(y, mo, d, h, mi) { var x = new Date(y, mo - 1, d, h, mi); return x.getFullYear() + p2(x.getMonth() + 1) + p2(x.getDate()) + 'T' + p2(x.getHours()) + p2(x.getMinutes()) + '00'; }
+function buildIcs(items) {
+  var L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Salname Ring//EN', 'CALSCALE:GREGORIAN'], stamp = icsStamp(new Date());
+  items.forEach(function (it) {
+    var ps = it.k.split('-'), hm = it.t.t.split(':'), y = +ps[0], mo = +ps[1], d = +ps[2], h = +hm[0], mi = +hm[1], lead = +it.t.l || 0;
+    L.push('BEGIN:VEVENT', 'UID:' + it.t.id + '-' + it.k + '@salname', 'DTSTAMP:' + stamp, 'DTSTART:' + icsLocal(y, mo, d, h, mi), 'DTEND:' + icsLocal(y, mo, d, h, mi + 30),
+      'SUMMARY:' + icsEsc(it.t.x), 'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc(it.t.x), 'TRIGGER:' + (lead ? '-PT' + lead + 'M' : 'PT0S'), 'END:VALARM', 'END:VEVENT');
+  });
+  L.push('END:VCALENDAR');
+  return L.join('\r\n') + '\r\n';
+}
+/*ICS-END*/
+
+var G_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var G_EN_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+var G_KU = ['کانوونی دووەم','شوبات','ئازار','نیسان','ئایار','حوزەیران','تەمموز','ئاب','ئەیلوول','تشرینی یەکەم','تشرینی دووەم','کانوونی یەکەم'];
+var K_LAT = ['Xakelêwe','Gullan','Cozerdan','Pûşper','Gelawêj','Xermanan','Rezber','Gelarêzan','Sermawez','Befranbar','Rêbendan','Reşeme'];
+var K_KU = ['خاکەلێوە','گوڵان','جۆزەردان','پووشپەڕ','گەلاوێژ','خەرمانان','ڕەزبەر','گەڵاڕێزان','سەرماوەز','بەفرانبار','ڕێبەندان','ڕەشەمە'];
+var EN_WD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var KU_WD = ['یەکشەممە','دووشەممە','سێشەممە','چوارشەممە','پێنجشەممە','هەینی','شەممە'];
+var EN_INI = ['S','M','T','W','T','F','S'];
+var KU_INI = ['ی','د','س','چ','پ','هـ','ش'];
+var REGIONS = {
+  krg: { ws: 6, we: [5] },
+  iq: { ws: 0, we: [5, 6] },
+  eu: { ws: 1, we: [6, 0] },
+  us: { ws: 0, we: [6, 0] }
+};
+var MOODS = [
+  { id: 'radiant', n: 'Radiant', ku: 'گەش' },
+  { id: 'calm', n: 'Calm', ku: 'ئارام' },
+  { id: 'okay', n: 'Okay', ku: 'ئاسایی' },
+  { id: 'low', n: 'Low', ku: 'خەمبار' },
+  { id: 'stormy', n: 'Stormy', ku: 'تووڕە' }
+];
+
+var now = new Date();
+var TODAY = utc(now.getFullYear(), now.getMonth(), now.getDate());
+var S = { mode: 'g', region: 'krg', sel: TODAY, tab: 'month', view: 'month', orient: 'sel' };
+var data = {};
+var $ = function (id) { return document.getElementById(id); };
+var svg = $('wheel');
+var IN_CLAUDE = !!(window.claude && window.claude.use);
+
+function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function f(n) { return n.toFixed(2); }
+function P(r, deg) { var a = deg * Math.PI / 180; return [r * Math.sin(a), -r * Math.cos(a)]; }
+function arcPath(r0, r1, a0, a1) {
+  var A = P(r1, a0), B = P(r1, a1), C = P(r0, a1), D = P(r0, a0), lg = (a1 - a0) > 180 ? 1 : 0;
+  return 'M' + f(A[0]) + ' ' + f(A[1]) + 'A' + r1 + ' ' + r1 + ' 0 ' + lg + ' 1 ' + f(B[0]) + ' ' + f(B[1]) +
+    'L' + f(C[0]) + ' ' + f(C[1]) + 'A' + r0 + ' ' + r0 + ' 0 ' + lg + ' 0 ' + f(D[0]) + ' ' + f(D[1]) + 'Z';
+}
+function labelAt(r, deg, text, cls) {
+  var bottom = Math.cos(deg * Math.PI / 180) < -0.001;
+  var t = bottom ? 'rotate(' + f(deg + 180) + ') translate(0 ' + r + ')' : 'rotate(' + f(deg) + ') translate(0 ' + (-r) + ')';
+  return '<text class="' + cls + '" transform="' + t + '" text-anchor="middle" dominant-baseline="central">' + text + '</text>';
+}
+function moonG(p, r) {
+  var c = Math.cos(2 * Math.PI * p), rx = Math.abs(c).toFixed(3), sweep = c > 0 ? 0 : 1, waxing = p < 0.5;
+  var d = 'M0 -1A1 1 0 0 1 0 1A' + rx + ' 1 0 0 ' + sweep + ' 0 -1Z';
+  return '<circle r="' + r + '" class="moon-dark"/><path class="moon-lit" d="' + d + '" transform="scale(' + (waxing ? r : -r) + ' ' + r + ')"/><circle r="' + r + '" class="moon-ring"/>';
+}
+function monthNames(mode, m) {
+  return mode === 'g' ? { lat: G_EN[m], full: G_EN_FULL[m], ku: G_KU[m] } : { lat: K_LAT[m], full: K_LAT[m], ku: K_KU[m] };
+}
+
+/* ---------- storage ---------- */
+var LS = 'salname.v1';
+var db = null, uidv = null, dbPath = '', dirty = {}, saving = false, saveTimer = null, syncState = 'device';
+function lsLoad() {
+  try {
+    var j = JSON.parse(localStorage.getItem(LS) || 'null');
+    if (j) {
+      if (j.data && typeof j.data === 'object') data = j.data;
+      if (j.prefs) { if (j.prefs.mode === 'g' || j.prefs.mode === 'k') S.mode = j.prefs.mode; if (REGIONS[j.prefs.region]) S.region = j.prefs.region; if (j.prefs.view === 'month' || j.prefs.view === 'year') S.view = j.prefs.view; if (j.prefs.orient === 'sel' || j.prefs.orient === 'start') S.orient = j.prefs.orient; }
+    }
+  } catch (e) {}
+}
+function lsSave() { try { localStorage.setItem(LS, JSON.stringify({ data: data, prefs: { mode: S.mode, region: S.region, view: S.view, orient: S.orient } })); } catch (e) {} }
+function setSync(s) {
+  syncState = s;
+  var t = { device: 'Saved on this device', saving: 'Saving to your account…', account: 'Saved to your account', error: 'Could not reach your account. Kept on this device for now.' }[s];
+  $('sync').textContent = t;
+}
+function norm(v) {
+  var o = { m: {}, t: {} };
+  if (v && v.m && typeof v.m === 'object') for (var k in v.m) o.m[k] = String(v.m[k]);
+  if (v && v.t && typeof v.t === 'object') for (var k2 in v.t) if (Array.isArray(v.t[k2])) o.t[k2] = v.t[k2].map(function (t) { return { id: String(t.id), x: String(t.x), d: !!t.d, t: t.t ? String(t.t) : '', l: Number(t.l) || 0 }; });
+  return o;
+}
+function hasContent(o) { return o && (Object.keys(o.m).length || Object.keys(o.t).some(function (k) { return o.t[k].length; })); }
+function touch(ym) {
+  dirty[ym] = true; lsSave();
+  if (!db) { setSync('device'); return; }
+  setSync('saving');
+  clearTimeout(saveTimer); saveTimer = setTimeout(flush, 500);
+}
+function flush() {
+  if (saving || !db) return;
+  var ids = Object.keys(dirty);
+  if (!ids.length) return;
+  saving = true;
+  var ym = ids[0];
+  delete dirty[ym];
+  var body = JSON.parse(JSON.stringify(data[ym] || { m: {}, t: {} }));
+  for (var k in body.t) if (!body.t[k].length) delete body.t[k];
+  db.collection(dbPath).doc(ym).set(body).then(function () {
+    saving = false;
+    if (Object.keys(dirty).length) flush(); else setSync('account');
+  }).catch(function () {
+    saving = false; dirty[ym] = true; setSync('error');
+  });
+}
+function ymOf(k) { return k.slice(0, 7); }
+function ddOf(k) { return k.slice(8); }
+function getMood(k) { var d = data[ymOf(k)]; return d && d.m[ddOf(k)] || null; }
+function getTasks(k) { var d = data[ymOf(k)]; return d && d.t[ddOf(k)] || []; }
+function ensure(k) { var ym = ymOf(k); if (!data[ym]) data[ym] = { m: {}, t: {} }; return data[ym]; }
+function setMood(k, id) { var d = ensure(k); if (id) d.m[ddOf(k)] = id; else delete d.m[ddOf(k)]; touch(ymOf(k)); }
+function sortTasks(arr) { arr.sort(function (a, b) { if (!a.t && !b.t) return 0; if (!a.t) return 1; if (!b.t) return -1; return a.t < b.t ? -1 : a.t > b.t ? 1 : 0; }); }
+function addTask(k, x, tm, lead) { var d = ensure(k), dd = ddOf(k); if (!d.t[dd]) d.t[dd] = []; d.t[dd].push({ id: Math.random().toString(36).slice(2, 9), x: x, d: false, t: tm || '', l: +lead || 0 }); sortTasks(d.t[dd]); touch(ymOf(k)); }
+function setTaskField(k, id, field, val) { getTasks(k).forEach(function (t) { if (t.id === id) t[field] = val; }); sortTasks(getTasks(k)); touch(ymOf(k)); }
+function findTask(k, id) { var r = null; getTasks(k).forEach(function (t) { if (t.id === id) r = t; }); return r; }
+function toggleTask(k, id) { getTasks(k).forEach(function (t) { if (t.id === id) t.d = !t.d; }); touch(ymOf(k)); }
+function delTask(k, id) { var d = ensure(k), dd = ddOf(k); d.t[dd] = (d.t[dd] || []).filter(function (t) { return t.id !== id; }); if (!d.t[dd].length) delete d.t[dd]; touch(ymOf(k)); }
+
+function initStore() {
+  if (!window.claude || !window.claude.use) return;
+  Promise.all([window.claude.use('user'), window.claude.use('db')]).then(function (r) {
+    var user = r[0], d = r[1];
+    if (!user || !d) return null;
+    return user.id().then(function (id) { if (id) { uidv = id; db = d; dbPath = 'data/users/' + id; } });
+  }).then(function () {
+    if (!db) return;
+    var first = true;
+    var slow = setTimeout(function () { if (first) setSync('error'); }, 10000);
+    db.collection(dbPath).onSnapshot(function (snap) {
+      var seen = {};
+      snap.docs.forEach(function (doc) {
+        seen[doc.id] = true;
+        if (dirty[doc.id]) return;
+        data[doc.id] = norm(doc.data());
+      });
+      if (first && !snap.metadata.fromCache) {
+        first = false; clearTimeout(slow);
+        Object.keys(data).forEach(function (id) { if (!seen[id] && hasContent(data[id])) touch(id); });
+        if (!Object.keys(dirty).length) setSync('account');
+      }
+      lsSave(); renderData();
+    }, function () { setSync('error'); });
+  }).catch(function () {});
+}
+
+/* ---------- state moves ---------- */
+function setYM(y, m) {
+  var v = viewOf(S.sel, S.mode), info = monthInfo(S.mode, y, m), d = Math.min(v.d, info.n);
+  S.sel = info.start + (d - 1) * MS;
+}
+function shiftMonth(dir) {
+  var v = viewOf(S.sel, S.mode), m = v.m + dir, y = v.y;
+  if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; }
+  setYM(y, m);
+}
+
+/* ---------- render: dial ---------- */
+var cur = { mo: 0, dofs: 0, yo: 0 }, curStruct = '', curMk = '', tweenRaf = 0;
+var REDUCED = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+function wrapD(a, b) { return ((b - a + 540) % 360) - 180; }
+function yearDays() {
+  var arr = [], gi = 0, v = viewOf(S.sel, S.mode);
+  for (var m = 0; m < 12; m++) { var inf = monthInfo(S.mode, v.y, m); arr.push({ m: m, start: inf.start, n: inf.n, gi: gi }); gi += inf.n; }
+  return { months: arr, N: gi };
+}
+/* Where the rings should sit. "sel": the selected month and day are centred at 12 o'clock. "start": January / day 1 start at 12 o'clock. */
+function targets() {
+  var v = viewOf(S.sel, S.mode), t = { mo: 0, dofs: 0, yo: 0 };
+  if (S.view === 'year') {
+    var Y = yearDays(), gi = Y.months[v.m].gi + v.d - 1;
+    t.yo = S.orient === 'sel' ? (gi + 0.5) * 360 / Y.N : 0;
+  } else {
+    var info = monthInfo(S.mode, v.y, v.m);
+    t.mo = S.orient === 'sel' ? (v.m + 0.5) * 30 : 0;
+    t.dofs = S.orient === 'sel' ? (v.d - 0.5) * 360 / info.n : 0;
+  }
+  return t;
+}
+function syncWheel() {
+  var v = viewOf(S.sel, S.mode), t = targets(), struct = S.view + S.mode + v.y, mk = struct + v.m;
+  cancelAnimationFrame(tweenRaf);
+  if (!curStruct || struct !== curStruct || REDUCED || document.hidden) { cur = t; curStruct = struct; curMk = mk; renderWheel(1); return; }
+  var monthChanged = S.view === 'month' && mk !== curMk;
+  var from = { mo: cur.mo, dofs: monthChanged ? t.dofs : cur.dofs, yo: cur.yo };
+  curStruct = struct; curMk = mk;
+  if (!monthChanged && Math.abs(wrapD(from.mo, t.mo)) < 0.01 && Math.abs(wrapD(from.dofs, t.dofs)) < 0.01 && Math.abs(wrapD(from.yo, t.yo)) < 0.01) { cur = t; renderWheel(1); return; }
+  var t0 = performance.now(), dur = 520;
+  (function step(now) {
+    var p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+    cur = { mo: from.mo + wrapD(from.mo, t.mo) * e, dofs: from.dofs + wrapD(from.dofs, t.dofs) * e, yo: from.yo + wrapD(from.yo, t.yo) * e };
+    renderWheel(monthChanged ? 0.2 + 0.8 * e : 1);
+    if (p < 1) tweenRaf = requestAnimationFrame(step); else { cur = t; }
+  })(t0);
+}
+function sunAt(md) {
+  var sp = P(293, md), rays = '';
+  for (var z = 0; z < 8; z++) { var an = z * Math.PI / 4; rays += '<line class="sun-r" x1="' + f(sp[0] + 5.2 * Math.cos(an)) + '" y1="' + f(sp[1] + 5.2 * Math.sin(an)) + '" x2="' + f(sp[0] + 7.4 * Math.cos(an)) + '" y2="' + f(sp[1] + 7.4 * Math.sin(an)) + '"/>'; }
+  return '<circle class="sun-c" cx="' + f(sp[0]) + '" cy="' + f(sp[1]) + '" r="3.6"/>' + rays;
+}
+function todayMark(md) {
+  var T1 = P(297, md - 2.4), T2 = P(297, md + 2.4), T3 = P(288, md);
+  return '<path class="today-mark" d="M' + f(T1[0]) + ' ' + f(T1[1]) + 'L' + f(T2[0]) + ' ' + f(T2[1]) + 'L' + f(T3[0]) + ' ' + f(T3[1]) + 'Z"/>';
+}
+function monthSeg(i, sel, nm, a0, a1, mid) {
+  return '<g class="hit month' + (sel ? ' sel' : '') + '" data-act="month" data-i="' + i + '" tabindex="0" role="button" aria-pressed="' + sel + '" aria-label="' + esc(nm.full) + '">' +
+    '<path class="seg" d="' + arcPath(94, 152, a0, a1) + '"/>' + labelAt(118, mid, esc(nm.lat), 't-mlat') + labelAt(140, mid, nm.ku, 't-mku') + '</g>';
+}
+function monthWheel(v, reg, fade) {
+  var info = monthInfo(S.mode, v.y, v.m), n = info.n, h = '', i, j;
+  for (i = 0; i < 12; i++) {
+    var mid = i * 30 + 15 - cur.mo;
+    h += monthSeg(i, i === v.m, monthNames(S.mode, i), mid - 13.8, mid + 13.8, mid);
+  }
+  var step = 360 / n, moons = '', days = '', pips = '', marks = '';
+  for (j = 0; j < n; j++) {
+    var ts = info.start + j * MS, k = iso(ts), a0 = j * step + 0.9 - cur.dofs, a1 = (j + 1) * step - 0.9 - cur.dofs, md = (j + 0.5) * step - cur.dofs;
+    var dow = new Date(ts).getUTCDay(), wk = reg.we.indexOf(dow) > -1;
+    var mood = getMood(k), tasks = getTasks(k), isSel = ts === S.sel, isToday = ts === TODAY;
+    var gv = viewOf(ts, 'g'), kv = viewOf(ts, 'k'), other = S.mode === 'g' ? kv : gv;
+    var p = moonPhase(ts), mp = P(173, md), dp = P(203, md);
+    moons += '<g transform="translate(' + f(mp[0]) + ' ' + f(mp[1]) + ')">' + (isSel ? '<circle r="14" class="halo"/>' : '') + moonG(p, 10) + '</g>';
+    var label = EN_WD[dow] + ' ' + (j + 1) + ' ' + monthNames(S.mode, v.m).full + ' ' + v.y + '. ' + moonName(p) + '.' + (mood ? ' Mood ' + mood + '.' : '') + (tasks.length ? ' ' + tasks.length + ' reminders.' : '');
+    days += '<g class="hit day' + (wk ? ' wk' : '') + (isSel ? ' sel' : '') + (isToday ? ' today' : '') + (mood ? ' has-mood' : '') + '"' +
+      (mood ? ' style="--mc:var(--m-' + mood + ')"' : '') + ' data-act="day" data-k="' + k + '" tabindex="' + (isSel ? 0 : -1) + '" role="button" aria-label="' + esc(label) + '">' +
+      '<path class="seg" d="' + arcPath(194, 254, a0, a1) + '"/>' +
+      labelAt(244, md, S.mode === 'g' ? EN_INI[dow] : KU_INI[dow], 't-wd') +
+      labelAt(229, md, String(j + 1), 't-num') +
+      labelAt(214, md, String(other.d), 't-sec' + (other.d === 1 ? ' first' : '')) +
+      '<circle class="mdot" cx="' + f(dp[0]) + '" cy="' + f(dp[1]) + '" r="4.6"/></g>';
+    if (dow === reg.ws) { var t0 = P(188, j * step - cur.dofs), t1 = P(196, j * step - cur.dofs); days += '<line class="tick" x1="' + f(t0[0]) + '" y1="' + f(t0[1]) + '" x2="' + f(t1[0]) + '" y2="' + f(t1[1]) + '"/>'; }
+    for (var q = 0; q < Math.min(3, tasks.length); q++) {
+      var pp = P(266 + q * 8, md);
+      pips += '<circle class="pip' + (tasks[q].d ? ' done' : '') + '" cx="' + f(pp[0]) + '" cy="' + f(pp[1]) + '" r="3.1"/>';
+    }
+    if (isToday) marks += todayMark(md);
+    if (kv.m === 0 && kv.d === 1) marks += sunAt(md);
+  }
+  return h + '<g opacity="' + f(fade) + '">' + moons + days + pips + '</g>' + marks;
+}
+function yearWheel(v, reg) {
+  var Y = yearDays(), N = Y.N, step = 360 / N, off = cur.yo, h = '', moons = '', days = '', pips = '', marks = '', spoke = '';
+  Y.months.forEach(function (mo) {
+    var a0 = mo.gi * step + 0.4 - off, a1 = (mo.gi + mo.n) * step - 0.4 - off, mid = (mo.gi + mo.n / 2) * step - off;
+    h += monthSeg(mo.m, mo.m === v.m, monthNames(S.mode, mo.m), a0, a1, mid);
+    var s0 = P(190, mo.gi * step - off), s1 = P(258, mo.gi * step - off);
+    days += '<line class="msep" x1="' + f(s0[0]) + '" y1="' + f(s0[1]) + '" x2="' + f(s1[0]) + '" y2="' + f(s1[1]) + '"/>';
+    for (var d = 0; d < mo.n; d++) {
+      var gi = mo.gi + d, ts = mo.start + d * MS, k = iso(ts);
+      var a = gi * step + 0.08 - off, b = (gi + 1) * step - 0.08 - off, md = (gi + 0.5) * step - off;
+      var dow = new Date(ts).getUTCDay(), wk = reg.we.indexOf(dow) > -1, mood = getMood(k), tasks = getTasks(k), isSel = ts === S.sel, isToday = ts === TODAY;
+      var p = moonPhase(ts), ill = (1 - Math.cos(2 * Math.PI * p)) / 2, mp = P(173, md), full = ill > 0.97;
+      moons += '<circle class="ymoon' + (full ? ' full' : '') + '" cx="' + f(mp[0]) + '" cy="' + f(mp[1]) + '" r="' + (full ? 2.3 : 1.5) + '" style="fill:color-mix(in srgb, var(--moon-lit) ' + Math.round(ill * 100) + '%, var(--moon-dark))"/>';
+      days += '<g class="hit day yd' + (wk ? ' wk' : '') + (isSel ? ' sel' : '') + (isToday ? ' today' : '') + (mood ? ' has-mood' : '') + '"' +
+        (mood ? ' style="--mc:var(--m-' + mood + ')"' : '') + ' data-act="day" data-k="' + k + '" tabindex="' + (isSel ? 0 : -1) + '" role="button" aria-label="' +
+        esc(EN_WD[dow] + ' ' + (d + 1) + ' ' + monthNames(S.mode, mo.m).full + ' ' + v.y + '. ' + moonName(p) + '.' + (mood ? ' Mood ' + mood + '.' : '') + (tasks.length ? ' ' + tasks.length + ' reminders.' : '')) + '">' +
+        '<path class="seg" d="' + arcPath(194, 254, a, b) + '"/></g>';
+      if (tasks.length) {
+        var pp = P(266, md), alldone = tasks.every(function (x) { return x.d; });
+        pips += '<circle class="pip ypip' + (alldone ? ' done' : '') + '" cx="' + f(pp[0]) + '" cy="' + f(pp[1]) + '" r="1.9"/>';
+      }
+      if (isSel) { var q0 = P(156, md), q1 = P(262, md); spoke = '<line class="spoke" x1="' + f(q0[0]) + '" y1="' + f(q0[1]) + '" x2="' + f(q1[0]) + '" y2="' + f(q1[1]) + '"/>'; }
+      if (isToday) marks += todayMark(md);
+      var kv = viewOf(ts, 'k');
+      if (kv.m === 0 && kv.d === 1) marks += sunAt(md);
+    }
+  });
+  return h + moons + days + pips + spoke + marks;
+}
+function renderWheel(fade) {
+  var v = viewOf(S.sel, S.mode), reg = REGIONS[S.region];
+  var focusKind = null, focusVal = null, ae = document.activeElement;
+  if (ae && svg.contains(ae) && ae.dataset) { focusKind = ae.dataset.act; focusVal = ae.dataset.i; }
+  var h = '<circle r="88" class="track"/><circle r="173" class="band"/><circle r="274" class="track" stroke-dasharray="2 5"/>';
+  h += S.view === 'year' ? yearWheel(v, reg) : monthWheel(v, reg, fade);
+  svg.innerHTML = h;
+  if (focusKind === 'day') { var el = svg.querySelector('.day.sel'); if (el) el.focus({ preventScroll: true }); }
+  else if (focusKind === 'month') { var em = svg.querySelector('.month[data-i="' + focusVal + '"]'); if (em) em.focus({ preventScroll: true }); }
+}
+
+/* ---------- render: hub ---------- */
+var yearsMode = '', yearsLo = 0, yearsHi = 0, lastYear = null;
+function renderHub() {
+  var v = viewOf(S.sel, S.mode), box = $('years');
+  if (yearsMode !== S.mode || v.y < yearsLo || v.y > yearsHi) {
+    var base = viewOf(TODAY, S.mode).y;
+    yearsLo = Math.min(base - 12, v.y - 3); yearsHi = Math.max(base + 20, v.y + 3); yearsMode = S.mode;
+    var html = '';
+    for (var y = yearsLo; y <= yearsHi; y++) html += '<button type="button" role="option" data-act="year" data-y="' + y + '">' + y + '</button>';
+    box.innerHTML = html; lastYear = null;
+  }
+  var sel = null;
+  Array.prototype.forEach.call(box.children, function (b) { var on = +b.dataset.y === v.y; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); if (on) sel = b; });
+  if (sel && lastYear !== v.y + S.mode) {
+    var first = lastYear === null;
+    box.scrollTo({ top: sel.offsetTop - box.clientHeight / 2 + sel.offsetHeight / 2, behavior: first ? 'auto' : 'smooth' });
+    lastYear = v.y + S.mode;
+  }
+  $('hubCap').textContent = S.mode === 'g' ? 'Gregorian' : 'Kurdish';
+  var o = viewOf(S.sel, S.mode === 'g' ? 'k' : 'g');
+  $('hubAlt').textContent = (S.mode === 'g' ? 'Kurdish ' : 'Gregorian ') + o.y;
+}
+
+/* ---------- render: day panel ---------- */
+function faceSvg(id) {
+  var feat = {
+    radiant: '<path d="M-5.5 1.5Q0 10 5.5 1.5Z" fill="var(--on-mood)"/>',
+    calm: '<path d="M-4.5 3Q0 7.5 4.5 3" fill="none" stroke="var(--on-mood)" stroke-width="1.6" stroke-linecap="round"/>',
+    okay: '<path d="M-4 4.5H4" fill="none" stroke="var(--on-mood)" stroke-width="1.6" stroke-linecap="round"/>',
+    low: '<path d="M-4.5 6.5Q0 2 4.5 6.5" fill="none" stroke="var(--on-mood)" stroke-width="1.6" stroke-linecap="round"/>',
+    stormy: '<path d="M-4 6.5Q0 3 4 6.5M-6.5 -6L-2 -4M6.5 -6L2 -4" fill="none" stroke="var(--on-mood)" stroke-width="1.6" stroke-linecap="round"/>'
+  }[id];
+  return '<svg viewBox="-12 -12 24 24" aria-hidden="true"><circle r="11" fill="var(--m-' + id + ')"/><circle cx="-3.6" cy="-2.6" r="1.3" fill="var(--on-mood)"/><circle cx="3.6" cy="-2.6" r="1.3" fill="var(--on-mood)"/>' + feat + '</svg>';
+}
+function renderDayHead() {
+  var ts = S.sel, k = iso(ts), dow = new Date(ts).getUTCDay();
+  var pv = viewOf(ts, S.mode), av = viewOf(ts, S.mode === 'g' ? 'k' : 'g');
+  var pn = monthNames(S.mode, pv.m), an = monthNames(S.mode === 'g' ? 'k' : 'g', av.m);
+  var kv = viewOf(ts, 'k');
+  $('dayHead').innerHTML =
+    '<div class="eyebrow"><span>' + EN_WD[dow] + '</span><span class="ku" lang="ckb">' + KU_WD[dow] + '</span></div>' +
+    '<div class="dnum">' + pv.d + '</div>' +
+    '<div class="dmy"><span>' + esc(pn.full) + ' ' + pv.y + '</span><span class="ku" lang="ckb">' + pn.ku + '</span></div>' +
+    '<div class="dalt"><span>' + av.d + ' ' + esc(an.full) + ' ' + av.y + '</span><span class="ku" lang="ckb">' + an.ku + '</span></div>' +
+    (kv.m === 0 && kv.d === 1 ? '<span class="chip">Newroz · نەورۆز</span>' : '');
+  var p = moonPhase(ts), ill = Math.round((1 - Math.cos(2 * Math.PI * p)) / 2 * 100);
+  $('dayMoon').innerHTML = '<svg viewBox="-12 -12 24 24" aria-hidden="true">' + moonG(p, 10) + '</svg><div><b>' + moonName(p) + '</b><span>' + ill + '% lit · moon age ' + (p * 29.53).toFixed(1) + ' days</span></div>';
+  var cur = getMood(k);
+  $('moods').innerHTML = MOODS.map(function (m) {
+    return '<button type="button" class="mood" style="--mc:var(--m-' + m.id + ')" data-act="mood" data-v="' + m.id + '" aria-pressed="' + (cur === m.id) + '">' + faceSvg(m.id) + '<span>' + m.n + '</span><span class="ku" lang="ckb">' + m.ku + '</span></button>';
+  }).join('');
+  $('clearMood').hidden = !cur;
+}
+var lastTimeKey = '';
+var LEADS = [[0, 'At the time'], [10, '10 min before'], [30, '30 min before'], [60, '1 hour before'], [1440, '1 day before']];
+function fmtTime(t) { if (!t) return ''; var a = t.split(':'); return new Date(2000, 0, 1, +a[0], +a[1]).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+function leadText(l) { for (var i = 0; i < LEADS.length; i++) if (LEADS[i][0] === +l) return LEADS[i][1].toLowerCase(); return ''; }
+function leadOptions(sel) { return LEADS.map(function (l) { return '<option value="' + l[0] + '"' + (+sel === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join(''); }
+function defaultTime(k) {
+  var n = new Date();
+  if (k === n.getFullYear() + '-' + p2(n.getMonth() + 1) + '-' + p2(n.getDate()) && n.getHours() < 23) return p2(n.getHours() + 1) + ':00';
+  return '09:00';
+}
+function renderTasks() {
+  var k = iso(S.sel), t = getTasks(k);
+  if (lastTimeKey !== k) { $('taskTime').value = defaultTime(k); lastTimeKey = k; }
+  $('taskList').innerHTML = t.length ? t.map(function (x) {
+    return '<li class="' + (x.d ? 'done' : '') + '"><div class="trow"><input type="checkbox" id="t-' + x.id + '" data-act="toggle" data-id="' + x.id + '"' + (x.d ? ' checked' : '') + '><label for="t-' + x.id + '">' + esc(x.x) + '</label><button type="button" class="x" data-act="del" data-id="' + x.id + '" aria-label="Delete reminder">×</button></div>' +
+      '<div class="tmeta"><input type="time" value="' + esc(x.t || '') + '" data-act="settime" data-id="' + x.id + '" aria-label="Time for this reminder"><select data-act="setlead" data-id="' + x.id + '" aria-label="When to alert you">' + leadOptions(x.l) + '</select>' +
+      (!IN_CLAUDE && x.t ? '<button type="button" data-act="ics-task" data-id="' + x.id + '">Add to phone calendar</button>' : '') + '</div></li>';
+  }).join('') : '<li class="empty" style="border:0;padding:0">Nothing planned. Add a reminder with a time and it appears on the edge of the dial.</li>';
+}
+
+/* ---------- render: overview ---------- */
+function moodBar(cnt, total) {
+  if (!total) return '<p class="empty">No moods logged yet. Pick one for a day and the colours collect here.</p>';
+  var bar = '', tally = '';
+  MOODS.forEach(function (m) { var c = cnt[m.id] || 0; if (c) { bar += '<i style="--mc:var(--m-' + m.id + ');flex:' + c + '"></i>'; tally += '<li style="--mc:var(--m-' + m.id + ')"><i></i>' + m.n + ' ' + c + '</li>'; } });
+  return '<div class="bar" role="img" aria-label="Mood balance">' + bar + '</div><ul class="tally">' + tally + '</ul>';
+}
+function renderOverview() {
+  var v = viewOf(S.sel, S.mode), out = '';
+  document.querySelectorAll('[data-act="tab"]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.v === S.tab); });
+  if (S.tab === 'month') {
+    var info = monthInfo(S.mode, v.y, v.m), cnt = {}, mooded = 0, tt = 0, td = 0, agenda = [];
+    for (var i = 0; i < info.n; i++) {
+      var k = iso(info.start + i * MS), m = getMood(k), t = getTasks(k);
+      if (m) { cnt[m] = (cnt[m] || 0) + 1; mooded++; }
+      if (t.length) { tt += t.length; td += t.filter(function (x) { return x.d; }).length; agenda.push({ k: k, i: i + 1, t: t, dow: new Date(info.start + i * MS).getUTCDay() }); }
+    }
+    var nm = monthNames(S.mode, v.m);
+    $('ovTitle').textContent = nm.full + ' ' + v.y;
+    out = moodBar(cnt, mooded) +
+      '<p class="stat">' + (tt ? td + ' of ' + tt + ' reminders done' : 'No reminders this month') + ' · ' + mooded + ' of ' + info.n + ' days with a mood</p>' +
+      (agenda.length ? '<ul class="agenda">' + agenda.map(function (a) {
+        return '<li><button type="button" data-act="day-go" data-k="' + a.k + '"><b>' + a.i + '<small>' + EN_WD[a.dow].slice(0, 3) + '</small></b><span>' + a.t.map(function (x) { return '<div class="' + (x.d ? 'd' : '') + '">' + (x.t ? '<span class="at">' + fmtTime(x.t) + '</span>' : '') + esc(x.x) + '</div>'; }).join('') + '</span></button></li>';
+      }).join('') + '</ul>' : '') + (!IN_CLAUDE && agenda.length ? '<button type="button" class="pill ics" data-act="ics-month">Add this month to phone calendar</button>' : '');
+  } else {
+    $('ovTitle').textContent = (S.mode === 'g' ? 'Year ' : 'Kurdish year ') + v.y;
+    var cnt2 = {}, mooded2 = 0, tt2 = 0, td2 = 0, rows = '';
+    for (var mi = 0; mi < 12; mi++) {
+      var inf = monthInfo(S.mode, v.y, mi), nn = monthNames(S.mode, mi);
+      rows += '<button type="button" class="hm-l' + (mi === v.m ? ' on' : '') + '" data-act="month-go" data-i="' + mi + '">' + esc(nn.lat) + '</button>';
+      for (var d = 0; d < 31; d++) {
+        if (d >= inf.n) { rows += '<span class="hc x"></span>'; continue; }
+        var ts = inf.start + d * MS, kk = iso(ts), mm = getMood(kk), tk = getTasks(kk);
+        if (mm) { cnt2[mm] = (cnt2[mm] || 0) + 1; mooded2++; }
+        tt2 += tk.length; td2 += tk.filter(function (x) { return x.d; }).length;
+        rows += '<button type="button" tabindex="-1" class="hc' + (mm ? ' m' : '') + (tk.length ? ' t' : '') + (ts === S.sel ? ' sel' : '') + (ts === TODAY ? ' today' : '') + '"' + (mm ? ' style="--mc:var(--m-' + mm + ')"' : '') + ' data-act="day-go" data-k="' + kk + '" aria-label="' + esc(nn.full + ' ' + (d + 1)) + '"></button>';
+      }
+    }
+    out = moodBar(cnt2, mooded2) + '<p class="stat">' + (tt2 ? td2 + ' of ' + tt2 + ' reminders done' : 'No reminders this year') + ' · ' + mooded2 + ' days with a mood</p>' +
+      '<div class="hm-wrap" style="margin-top:14px"><div class="hm">' + rows + '</div></div><p class="hm-note">One row per month, one cell per day. A dark dot marks a day with reminders.</p>';
+  }
+  $('overview').innerHTML = out;
+}
+
+function renderControls() {
+  $('modeG').setAttribute('aria-checked', S.mode === 'g');
+  $('modeK').setAttribute('aria-checked', S.mode === 'k');
+  $('viewM').setAttribute('aria-checked', S.view === 'month');
+  $('viewY').setAttribute('aria-checked', S.view === 'year');
+  $('orS').setAttribute('aria-checked', S.orient === 'sel');
+  $('orF').setAttribute('aria-checked', S.orient === 'start');
+  $('region').value = S.region;
+}
+function renderData() { syncWheel(); renderDayHead(); renderTasks(); renderOverview(); }
+function renderAll() { renderControls(); renderHub(); renderData(); }
+
+/* ---------- events ---------- */
+function act(t) {
+  var a = t.dataset.act, v = viewOf(S.sel, S.mode);
+  if (a === 'month' || a === 'month-go') { setYM(v.y, +t.dataset.i); }
+  else if (a === 'day' || a === 'day-go') { var p = t.dataset.k.split('-'); S.sel = utc(+p[0], +p[1] - 1, +p[2]); }
+  else if (a === 'year') { setYM(+t.dataset.y, v.m); }
+  else if (a === 'mode') { S.mode = t.dataset.v; lsSave(); }
+  else if (a === 'today') { S.sel = TODAY; }
+  else if (a === 'tab') { S.tab = t.dataset.v; }
+  else if (a === 'view') { S.view = t.dataset.v; lsSave(); }
+  else if (a === 'orient') { S.orient = t.dataset.v; lsSave(); }
+  else if (a === 'mood') { var k = iso(S.sel); setMood(k, getMood(k) === t.dataset.v ? null : t.dataset.v); }
+  else if (a === 'clear-mood') { setMood(iso(S.sel), null); }
+  else if (a === 'toggle') { toggleTask(iso(S.sel), t.dataset.id); }
+  else if (a === 'del') { delTask(iso(S.sel), t.dataset.id); }
+  else if (a === 'settime') { setTaskField(iso(S.sel), t.dataset.id, 't', t.value); }
+  else if (a === 'setlead') { setTaskField(iso(S.sel), t.dataset.id, 'l', +t.value); }
+  else if (a === 'ics-task') { exportIcs([{ k: iso(S.sel), t: findTask(iso(S.sel), t.dataset.id) }]); return; }
+  else if (a === 'ics-month') { exportMonthIcs(); return; }
+  else if (a === 'notif') { askNotif(); return; }
+  else return;
+  renderAll();
+}
+document.addEventListener('click', function (e) {
+  var t = e.target.closest('[data-act]');
+  if (!t || ['toggle', 'settime', 'setlead'].indexOf(t.dataset.act) > -1) return;
+  act(t);
+});
+document.addEventListener('change', function (e) { if (e.target.dataset && ['toggle', 'settime', 'setlead'].indexOf(e.target.dataset.act) > -1) act(e.target); });
+svg.addEventListener('keydown', function (e) {
+  var t = e.target.closest('[data-act]');
+  if (!t) return;
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act(t); return; }
+  if (t.dataset.act === 'day') {
+    var step = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 7, ArrowUp: -7 }[e.key];
+    if (step) { e.preventDefault(); S.sel += step * MS; renderAll(); return; }
+    if (e.key === 'PageDown') { e.preventDefault(); shiftMonth(1); renderAll(); }
+    if (e.key === 'PageUp') { e.preventDefault(); shiftMonth(-1); renderAll(); }
+  } else if (t.dataset.act === 'month') {
+    var ms = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (ms) { e.preventDefault(); var v = viewOf(S.sel, S.mode), nm = (v.m + ms + 12) % 12; setYM(v.y, nm); renderAll(); }
+  }
+});
+$('region').addEventListener('change', function () { S.region = this.value; lsSave(); syncWheel(); });
+$('addForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var inp = $('taskInput'), x = inp.value.trim(), tm = $('taskTime').value;
+  if (!x) return;
+  if (!tm) { $('taskTime').focus(); return; }
+  addTask(iso(S.sel), x, tm, $('taskLead').value); inp.value = '';
+  renderData();
+});
+
+function toast(msg, sub) {
+  var el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = '<div><b>' + esc(msg) + '</b><span>' + esc(sub) + '</span></div><button type="button">Dismiss</button>';
+  el.querySelector('button').addEventListener('click', function () { el.remove(); });
+  $('toasts').appendChild(el);
+}
+function notify(title, body) {
+  try {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    if (navigator.serviceWorker && navigator.serviceWorker.ready) navigator.serviceWorker.ready.then(function (r) { r.showNotification(title, { body: body, icon: 'icon-192.png' }); }).catch(function () { new Notification(title, { body: body }); });
+    else new Notification(title, { body: body });
+  } catch (e) {}
+}
+var FIRED = 'salname.fired';
+function checkAlerts() {
+  var fired = {}, changed = false, nowMs = Date.now();
+  try { fired = JSON.parse(localStorage.getItem(FIRED) || '{}'); } catch (e) {}
+  Object.keys(data).forEach(function (ym) {
+    var d = data[ym], tt = d && d.t || {};
+    Object.keys(tt).forEach(function (dd) {
+      tt[dd].forEach(function (x) {
+        if (!x.t || x.d) return;
+        var key = ym + '-' + dd + '|' + x.id + '|' + x.t + '|' + (x.l || 0);
+        if (fired[key]) return;
+        var ps = (ym + '-' + dd).split('-'), hm = x.t.split(':');
+        var ev = new Date(+ps[0], +ps[1] - 1, +ps[2], +hm[0], +hm[1]).getTime(), at = ev - (x.l || 0) * 60000;
+        if (nowMs >= at && nowMs < ev + 3600000) {
+          fired[key] = 1; changed = true;
+          var sub = fmtTime(x.t) + (x.l ? ' · ' + leadText(x.l).replace(' before', '') + ' to go' : ' · now');
+          toast(x.x, sub); notify(x.x, sub);
+        }
+      });
+    });
+  });
+  if (changed) { try { localStorage.setItem(FIRED, JSON.stringify(fired)); } catch (e) {} }
+}
+function startAlerts() { setInterval(checkAlerts, 20000); document.addEventListener('visibilitychange', function () { if (!document.hidden) checkAlerts(); }); checkAlerts(); }
+function setupAlertUi() {
+  $('alertNote').textContent = IN_CLAUDE ? 'Alerts pop up on this page while it is open.' : 'Alerts pop up while Salname is open. To be reminded when it is closed, add the reminder to your phone calendar.';
+  $('notifBtn').hidden = IN_CLAUDE || typeof Notification === 'undefined' || Notification.permission !== 'default';
+}
+function askNotif() { try { Notification.requestPermission().then(setupAlertUi); } catch (e) {} }
+function exportIcs(items) {
+  items = items.filter(function (i) { return i.t && i.t.t; });
+  if (!items.length) { toast('No time set', 'Set a time on the reminder first.'); return; }
+  var blob = new Blob([buildIcs(items)], { type: 'text/calendar;charset=utf-8' }), a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = items.length === 1 ? 'salname-reminder.ics' : 'salname-reminders.ics';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+}
+function exportMonthIcs() {
+  var v = viewOf(S.sel, S.mode), info = monthInfo(S.mode, v.y, v.m), items = [];
+  for (var i = 0; i < info.n; i++) { var k = iso(info.start + i * MS); getTasks(k).forEach(function (t) { if (t.t && !t.d) items.push({ k: k, t: t }); }); }
+  exportIcs(items);
+}
+
+lsLoad();
+renderAll();
+setSync('device');
+setupAlertUi();
+startAlerts();
+initStore();
+})();
+</script>
+<script>
+if ("serviceWorker" in navigator && location.protocol === "https:") { window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); }); }
+</script>
+</body>
+</html>
