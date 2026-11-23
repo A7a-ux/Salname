@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Salname Clock</title>
+<meta name="theme-color" content="#0b1d26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Salname Clock">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="clock.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200;12..96,300;12..96,400&family=Noto+Sans+Arabic:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #f2f7f6; --ink2: rgba(242,247,246,.74); --ink3: rgba(242,247,246,.5); --glass: rgba(8,18,24,.46); --line: rgba(242,247,246,.16); }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; background: #0b1d26; overflow: hidden; }
+  body { font-family: 'Bricolage Grotesque', system-ui, sans-serif; color: var(--ink); -webkit-tap-highlight-color: transparent; }
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .fx { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  .face {
+    position: fixed; inset: 0 0 auto 0; display: flex; flex-direction: column; align-items: center; text-align: center;
+    padding: calc(env(safe-area-inset-top, 0px) + 7vh) max(20px, env(safe-area-inset-left, 0px)) 0 max(20px, env(safe-area-inset-right, 0px));
+    text-shadow: 0 1px 24px rgba(0,0,0,.22); user-select: none; -webkit-user-select: none;
+  }
+  .occ { min-height: 40px; display: flex; flex-direction: column; gap: 4px; align-items: center; justify-content: flex-end; margin-bottom: 14px; font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--ink2); opacity: 0; transition: opacity 1.2s; }
+  .occ.on { opacity: 1; }
+  .occ .ku { font-family: 'Noto Sans Arabic', sans-serif; font-size: 17px; letter-spacing: 0; text-transform: none; color: var(--ink); }
+  .tri { display: flex; gap: 4px; } .tri i { width: 16px; height: 2px; border-radius: 2px; display: block; }
+  .wd { display: flex; gap: .7em; align-items: baseline; font-size: clamp(13px, 3.6vw, 17px); letter-spacing: .22em; text-transform: uppercase; color: var(--ink2); font-weight: 400; }
+  .wd .ku { font-family: 'Noto Sans Arabic', sans-serif; letter-spacing: 0; text-transform: none; font-size: 1.15em; }
+  .time { font-weight: 200; font-size: clamp(76px, 25vw, 150px); line-height: 1; letter-spacing: -.035em; margin-top: .16em; font-variant-numeric: tabular-nums; cursor: pointer; }
+  .time small { font-size: .26em; letter-spacing: .05em; font-weight: 300; margin-left: .25em; color: var(--ink2); }
+  .rule { width: 36px; height: 1px; background: var(--ink3); margin: clamp(14px, 2.6vh, 24px) 0; }
+  .dates { display: grid; gap: clamp(12px, 2.2vh, 20px); }
+  .d { display: grid; gap: 3px; }
+  .d .lat { font-size: clamp(15px, 4.4vw, 21px); font-weight: 300; }
+  .d .ar { font-family: 'Noto Sans Arabic', sans-serif; font-size: clamp(15px, 4.3vw, 20px); font-weight: 300; color: var(--ink2); }
+  .d .tag { font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink3); }
+
+  /* today's tasks: glass card pinned to the bottom */
+  .tasks { position: fixed; left: 50%; transform: translateX(-50%); width: min(420px, calc(100% - 32px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+    background: var(--glass); -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2);
+    border: 1px solid var(--line); border-radius: 20px; padding: 12px 14px 8px; }
+  .th { display: flex; align-items: center; justify-content: space-between; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink2); padding: 0 2px 6px; }
+  .th .go { color: var(--ink3); text-decoration: none; letter-spacing: .14em; margin-right: auto; margin-left: 10px; }
+  .plus { width: 34px; height: 34px; margin: -6px -6px -6px 0; border-radius: 50%; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 24px; font-weight: 200; line-height: 1; cursor: pointer; }
+  .plus:active { background: var(--line); }
+  .row { display: flex; align-items: center; gap: 12px; min-height: 44px; border-top: 1px solid var(--line); }
+  .chk { flex: none; width: 44px; height: 44px; margin: 0 -10px 0 -10px; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center; }
+  .chk i { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--ink2); display: grid; place-items: center; transition: background .2s, border-color .2s; }
+  .chk[aria-pressed="true"] i { background: #8fd3b6; border-color: #8fd3b6; }
+  .chk[aria-pressed="true"] i::after { content: ''; width: 5px; height: 9px; border: solid #0b1d26; border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px, -1px); }
+  .tx { flex: 1; min-width: 0; font-size: 15px; font-weight: 300; text-align: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tm { flex: none; font-size: 13px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+  .row.done .tx { text-decoration: line-through; color: var(--ink3); }
+  .row.done .tm { color: var(--ink3); }
+  .empty { border-top: 1px solid var(--line); padding: 12px 2px; font-size: 14px; font-weight: 300; color: var(--ink2); }
+  .more { border-top: 1px solid var(--line); padding: 9px 2px; font-size: 12px; color: var(--ink3); letter-spacing: .06em; }
+  .more a { color: inherit; }
+  form.add { display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--line); padding: 8px 0; }
+  form.add[hidden] { display: none; }
+  form.add input { min-width: 0; font: inherit; font-size: 16px; color: var(--ink); background: rgba(255,255,255,.09); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; outline: none; color-scheme: dark; }
+  form.add input:focus { border-color: var(--ink2); }
+  form.add input[type=text] { flex: 1; }
+  form.add input[type=time] { flex: none; width: 104px; }
+  form.add button { flex: none; font: inherit; font-size: 14px; color: #0b1d26; background: var(--ink); border: 0; border-radius: 12px; padding: 10px 14px; cursor: pointer; }
+
+  /* animations */
+  @keyframes flick { 0%,100% { transform: scale(1,1) } 30% { transform: scale(.94,1.07) } 60% { transform: scale(1.04,.96) } }
+  @keyframes spark { 0% { transform: translate(0,0); opacity: 0 } 15% { opacity: 1 } 100% { transform: translate(var(--dx), -150px); opacity: 0 } }
+  @keyframes snow { 0% { transform: translate3d(0,-8vh,0) } 100% { transform: translate3d(var(--sx), 108vh, 0) } }
+  @keyframes burst { 0% { transform: scale(.05); opacity: 0 } 12% { opacity: 1 } 70% { opacity: .9 } 100% { transform: scale(1); opacity: 0 } }
+  @keyframes twinkle { 0%,100% { opacity: .25 } 50% { opacity: 1 } }
+  .flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flick 1.3s ease-in-out infinite; }
+  .sp { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #ffd27a; box-shadow: 0 0 6px #ff9a3c; animation: spark 3.4s ease-out infinite; opacity: 0; }
+  .sn { position: absolute; top: 0; border-radius: 50%; background: #fff; animation: snow linear infinite; }
+  .fw { transform-box: fill-box; transform-origin: 50% 50%; animation: burst 4.2s ease-out infinite; opacity: 0; }
+  .tw { animation: twinkle 3.6s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .flame, .sp, .sn, .fw, .tw { animation: none !important; } .sp, .fw { opacity: .6 } }
+
+  /* short phones: tighten */
+  @media (max-height: 700px) { .face { padding-top: calc(env(safe-area-inset-top, 0px) + 3vh); } .rule { margin: 10px 0; } .occ { min-height: 30px; margin-bottom: 6px; } }
+  /* sideways: text left, tasks right */
+  @media (orientation: landscape) and (max-height: 520px) {
+    .face { align-items: flex-start; text-align: left; padding-left: max(6vw, env(safe-area-inset-left, 0px)); padding-top: calc(env(safe-area-inset-top, 0px) + 3vh); }
+    .occ { align-items: flex-start; min-height: 0; margin-bottom: 4px; }
+    .time { font-size: clamp(56px, 22vh, 110px); }
+    .dates { display: none; }
+    .rule { display: none; }
+    .tasks { left: auto; right: max(4vw, env(safe-area-inset-right, 0px)); transform: none; width: min(380px, 46vw); bottom: 12px; }
+  }
+</style>
+</head>
+<body>
+<svg id="scene" viewBox="0 0 400 800" preserveAspectRatio="xMidYMax slice" aria-hidden="true"></svg>
+<div class="fx" id="fx" aria-hidden="true"></div>
+
+<main class="face" id="face">
+  <div class="occ" id="occ"></div>
+  <div class="wd"><span id="wdEn"></span><span class="ku" id="wdKu" lang="ckb" dir="rtl"></span></div>
+  <div class="time" id="time" role="button" tabindex="0" aria-label="Time. Tap to switch 12 and 24 hour"></div>
+  <div class="rule"></div>
+  <div class="dates">
+    <div class="d"><div class="tag">Gregorian</div><div class="lat" id="gLat"></div><div class="ar" id="gKu" lang="ckb" dir="rtl"></div></div>
+    <div class="d"><div class="tag">Kurdish solar</div><div class="lat" id="kLat"></div><div class="ar" id="kKu" lang="ckb" dir="rtl"></div></div>
+  </div>
+</main>
+
+<section class="tasks" id="tasks" aria-label="Today's tasks">
+  <div class="th"><span id="thTitle">Today</span><a class="go" href="./">Calendar</a><button class="plus" id="plus" type="button" aria-label="Add a task" aria-expanded="false">+</button></div>
+  <form class="add" id="addForm" hidden>
+    <input type="text" id="addText" placeholder="New task" maxlength="120" autocomplete="off" enterkeyhint="done" aria-label="Task">
+    <input type="time" id="addTime" aria-label="Time (optional)">
+    <button type="submit">Add</button>
+  </form>
+  <div id="list"></div>
+</section>
+
+<script>
+(function () {
+  'use strict';
+  /* ---------- calendar maths (same rules as the Salname Ring calendar) ---------- */
+  var MS = 86400000;
+  function utc(y, m, d) { return Date.UTC(y, m, d); }
+  function isLeap(y) { return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0; }
+  var KM_LEN = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+  function kLens(ky) { var l = KM_LEN.slice(); if (isLeap(ky - 700 + 1)) l[11] = 30; return l; }
+  function toKurdish(ts) {
+    var g = new Date(ts).getUTCFullYear();
+    if (ts < utc(g, 2, 21)) g--;
+    var off = Math.round((ts - utc(g, 2, 21)) / MS), lens = kLens(g + 700), m = 0;
+    while (m < 11 && off >= lens[m]) { off -= lens[m]; m++; }
+    return { y: g + 700, m: m, d: off + 1 };
+  }
+  function moonPhase(ms) {
+    var jd = ms / 86400000 + 2440587.5, a = ((jd - 2451550.26) / 29.530588853) % 1;
+    return a < 0 ? a + 1 : a;
+  }
+  var G_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var G_KU = ['کانوونی دووەم','شوبات','ئازار','نیسان','ئایار','حوزەیران','تەمموز','ئاب','ئەیلوول','تشرینی یەکەم','تشرینی دووەم','کانوونی یەکەم'];
+  var K_LAT = ['Xakelêwe','Gullan','Cozerdan','Pûşper','Gelawêj','Xermanan','Rezber','Gelarêzan','Sermawez','Befranbar','Rêbendan','Reşeme'];
+  var K_KU = ['خاکەلێوە','گوڵان','جۆزەردان','پووشپەڕ','گەلاوێژ','خەرمانان','ڕەزبەر','گەڵاڕێزان','سەرماوەز','بەفرانبار','ڕێبەندان','ڕەشەمە'];
+  var EN_WD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var KU_WD = ['یەکشەممە','دووشەممە','سێشەممە','چوارشەممە','پێنجشەممە','هەینی','شەممە'];
+  function kd(n) { return String(n).replace(/\d/g, function (c) { return '٠١٢٣٤٥٦٧٨٩'[c]; }); }
+  function p2(n) { return (n < 10 ? '0' : '') + n; }
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- occasions ---------- */
+  function hijri(d) {
+    try {
+      var o = {};
+      new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { day: 'numeric', month: 'numeric', year: 'numeric' }).formatToParts(d).forEach(function (p) { o[p.type] = parseInt(p.value, 10); });
+      return o;
+    } catch (e) { return null; }
+  }
+  function occasion(d) {
+    var h = location.hash.replace('#', '').toLowerCase();
+    if (h === 'newroz' || h === 'newyear' || h === 'christmas' || h === 'eid') return h;
+    var m = d.getMonth() + 1, day = d.getDate();
+    if (m === 3 && day >= 20 && day <= 22) return 'newroz';
+    if (m === 12 && day >= 24 && day <= 26) return 'christmas';
+    if ((m === 12 && day === 31) || (m === 1 && day <= 2)) return 'newyear';
+    var hj = hijri(d);
+    if (hj) {
+      if (hj.month === 10 && hj.day <= 3) return 'eid';                 /* Eid al-Fitr  */
+      if (hj.month === 12 && hj.day >= 10 && hj.day <= 13) return 'eid'; /* Eid al-Adha */
+    }
+    return '';
+  }
+  var OCC = {
+    newroz:    { en: 'Newroz Pirozbe', ku: 'نەورۆزتان پیرۆز بێت' },
+    christmas: { en: 'Merry Christmas', ku: 'کریسمەس پیرۆز بێت' },
+    newyear:   { en: 'Happy New Year', ku: 'ساڵی نوێتان پیرۆز بێت' },
+    eid:       { en: 'Eid Mubarak', ku: 'جەژنتان پیرۆز بێت' }
+  };
+
+  /* ---------- colour ---------- */
+  function hex(c) { return [1, 3, 5].map(function (i) { return parseInt(c.substr(i, 2), 16); }); }
+  function mix(a, b, t) { var A = hex(a), B = hex(b); return 'rgb(' + A.map(function (v, i) { return Math.round(v + (B[i] - v) * t); }).join(',') + ')'; }
+  /* sky keyframes by hour: top, horizon, far ridge, mid ridge, near ridge */
+  var KEYS = [
+    [0,  '#06131a', '#0f3239', '#0e2a31', '#0a1d23', '#05100f'],
+    [5,  '#0b1d26', '#1d4a52', '#16363e', '#0e2830', '#060f11'],
+    [6.5,'#5d8ea0', '#f0c8a0', '#6f93a0', '#3f6573', '#142a33'],
+    [9,  '#86b4c4', '#d3e6e6', '#7fa5b6', '#4d7689', '#1b3544'],
+    [15, '#8ab7c8', '#cfe3e6', '#7aa0b3', '#47708a', '#17324a'],
+    [17.5,'#5a6aa8','#f0a99a', '#6a74a8', '#4a4f8a', '#1b1d4a'],
+    [19, '#3a3478', '#d46f9a', '#5a4a92', '#3a2f72', '#141238'],
+    [21, '#0d1c2b', '#1a4350', '#14323d', '#0d242d', '#060f11'],
+    [24, '#06131a', '#0f3239', '#0e2a31', '#0a1d23', '#05100f']
+  ];
+  function palette(hr) {
+    for (var i = 0; i < KEYS.length - 1; i++) {
+      var a = KEYS[i], b = KEYS[i + 1];
+      if (hr >= a[0] && hr <= b[0]) { var t = (hr - a[0]) / (b[0] - a[0]); return a.slice(1).map(function (c, k) { return mix(c, b[k + 1], t); }); }
+    }
+    return KEYS[0].slice(1);
+  }
+  var OCC_PAL = {
+    newroz:    ['#1c1a3a', '#e9894b', '#4b3a62', '#2a2146', '#0d0a1c'],
+    christmas: ['#0a1a33', '#2c5878', '#2a4a6c', '#1a3050', '#0a1426'],
+    newyear:   ['#07071a', '#2a1c52', '#1e1a46', '#141233', '#080818'],
+    eid:       ['#061a1f', '#14585a', '#0f3d42', '#0a2a30', '#041214']
+  };
+
+  /* ---------- scene ---------- */
+  var svg = $('scene'), fx = $('fx');
+  function ridge(seed, base, amp, peakX, peakAmp) {
+    var pts = [], n = 40, i, x, y;
+    for (i = 0; i <= n; i++) {
+      x = i / n * 400;
+      y = base - amp * (Math.sin(i * .21 + seed) * .5 + Math.sin(i * .09 + seed * 2.3) * .5 + .5);
+      y -= peakAmp * Math.exp(-Math.pow((x - peakX) / 95, 2));
+      pts.push([x, y]);
+    }
+    var d = 'M0 800 L0 ' + pts[0][1].toFixed(1);
+    for (i = 1; i < pts.length; i++) {
+      var mx = (pts[i - 1][0] + pts[i][0]) / 2, my = (pts[i - 1][1] + pts[i][1]) / 2;
+      d += ' Q' + pts[i - 1][0].toFixed(1) + ' ' + pts[i - 1][1].toFixed(1) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1);
+    }
+    return d + ' L400 ' + pts[n][1].toFixed(1) + ' L400 800 Z';
+  }
+  function disc(now) {
+    var hr = now.getHours() + now.getMinutes() / 60, day = hr >= 6 && hr < 18, t, x, y, h = '';
+    t = day ? (hr - 6) / 12 : ((hr + 6) % 24) / 12;
+    x = 70 + t * 260; y = 520 - Math.sin(t * Math.PI) * 330;
+    if (day) {
+      h += '<circle cx="' + x + '" cy="' + y + '" r="46" fill="url(#glow)" opacity=".8"/><circle cx="' + x + '" cy="' + y + '" r="15" fill="#fff6e0" opacity=".92"/>';
+    } else {
+      var p = moonPhase(now.getTime()), ill = (1 - Math.cos(2 * Math.PI * p)) / 2, r = 15, off = (p < .5 ? -1 : 1) * ill * 2 * r;
+      h += '<defs><mask id="mm"><rect x="' + (x - 40) + '" y="' + (y - 40) + '" width="80" height="80" fill="#000"/><circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#fff"/><circle cx="' + (x + off) + '" cy="' + y + '" r="' + (r + .4) + '" fill="#000"/></mask></defs>' +
+        '<circle cx="' + x + '" cy="' + y + '" r="52" fill="url(#glow)" opacity="' + (.25 + ill * .55).toFixed(2) + '"/>' +
+        '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#e8f1ef" opacity=".1"/>' +
+        '<rect x="' + (x - 40) + '" y="' + (y - 40) + '" width="80" height="80" fill="#f4faf6" mask="url(#mm)"/>';
+    }
+    return h;
+  }
+  function stars(n, seed) {
+    var h = '', i, s = seed;
+    for (i = 0; i < n; i++) {
+      s = (s * 9301 + 49297) % 233280; var a = s / 233280;
+      s = (s * 9301 + 49297) % 233280; var b = s / 233280;
+      h += '<circle class="tw" cx="' + (a * 400).toFixed(0) + '" cy="' + (b * 380).toFixed(0) + '" r="' + (.5 + (i % 3) * .35) + '" fill="#fff" style="animation-delay:' + (i * .37 % 3.6).toFixed(2) + 's"/>';
+    }
+    return h;
+  }
+  function fire(cx, cy) {
+    return '<g transform="translate(' + cx + ' ' + cy + ')">' +
+      '<circle r="70" fill="url(#fireGlow)" opacity=".9"/>' +
+      '<path class="flame" d="M0 0 C-14 -4 -16 -22 -6 -36 C-4 -26 2 -26 2 -40 C12 -28 18 -12 12 -2 C8 3 -8 3 0 0Z" fill="#ff7a2a"/>' +
+      '<path class="flame" style="animation-delay:-.4s" d="M0 0 C-8 -3 -9 -14 -3 -23 C-2 -17 2 -17 2 -26 C8 -17 11 -8 7 -1 C4 2 -5 2 0 0Z" fill="#ffc34d"/>' +
+      '<path class="flame" style="animation-delay:-.8s" d="M0 0 C-4 -2 -4 -7 -1 -11 C1 -8 3 -8 4 -3 C3 1 -2 1 0 0Z" fill="#fff0b0"/></g>';
+  }
+  function pine(x, y, s, col) {
+    return '<path transform="translate(' + x + ' ' + y + ') scale(' + s + ')" d="M0 -60 L14 -30 L7 -30 L20 -6 L9 -6 L24 18 L2 18 L2 28 L-2 28 L-2 18 L-24 18 L-9 -6 L-20 -6 L-7 -30 L-14 -30Z" fill="' + col + '"/>';
+  }
+  function crescent(x, y, r) {
+    return '<defs><mask id="cm"><rect x="' + (x - r * 2) + '" y="' + (y - r * 2) + '" width="' + r * 4 + '" height="' + r * 4 + '" fill="#000"/><circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="#fff"/><circle cx="' + (x + r * .42) + '" cy="' + (y - r * .12) + '" r="' + r * .86 + '" fill="#000"/></mask></defs>' +
+      '<circle cx="' + x + '" cy="' + y + '" r="' + r * 3 + '" fill="url(#glowGold)" opacity=".55"/>' +
+      '<rect x="' + (x - r * 2) + '" y="' + (y - r * 2) + '" width="' + r * 4 + '" height="' + r * 4 + '" fill="#f6e3a6" mask="url(#cm)"/>' +
+      '<path transform="translate(' + (x + r * .95) + ' ' + (y - r * .05) + ')" d="M0 -9 L2.3 -2.8 L9 -2.8 L3.6 1.3 L5.6 8 L0 4 L-5.6 8 L-3.6 1.3 L-9 -2.8 L-2.3 -2.8Z" fill="#f6e3a6"/>';
+  }
+  var lastKey = '';
+  function draw(now, occ) {
+    var hr = now.getHours() + now.getMinutes() / 60, pal = occ ? OCC_PAL[occ] : palette(hr);
+    var key = occ + '|' + now.getHours() + ':' + now.getMinutes();
+    if (key === lastKey) return; lastKey = key;
+    var night = occ ? occ !== 'newroz' : (hr < 5.5 || hr >= 20.5), h = '';
+    h += '<defs>' +
+      '<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + pal[0] + '"/><stop offset=".62" stop-color="' + pal[1] + '"/></linearGradient>' +
+      '<radialGradient id="glow"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>' +
+      '<radialGradient id="glowGold"><stop offset="0" stop-color="#ffe9a8" stop-opacity=".6"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/></radialGradient>' +
+      '<radialGradient id="fireGlow"><stop offset="0" stop-color="#ff8a2a" stop-opacity=".75"/><stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/></radialGradient>' +
+      '<linearGradient id="mist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + pal[1] + '" stop-opacity="0"/><stop offset="1" stop-color="' + pal[1] + '" stop-opacity=".55"/></linearGradient></defs>';
+    h += '<rect width="400" height="800" fill="url(#sky)"/>';
+    if (night) h += stars(occ === 'eid' ? 46 : 34, occ === 'eid' ? 7 : 3);
+    h += occ === 'eid' ? crescent(292, 478, 30) : disc(now);
+    h += '<path d="' + ridge(1.2, 585, 70, 120, 20) + '" fill="' + pal[2] + '"/>';
+    h += '<rect x="0" y="520" width="400" height="140" fill="url(#mist)"/>';
+    h += '<path d="' + ridge(3.4, 655, 62, occ === 'newroz' ? 200 : 255, occ === 'newroz' ? 95 : 55) + '" fill="' + pal[3] + '"/>';
+    h += '<rect x="0" y="600" width="400" height="120" fill="url(#mist)" opacity=".7"/>';
+    h += '<path d="' + ridge(5.1, 735, 40, 90, 18) + '" fill="' + pal[4] + '"/>';
+    if (occ === 'newroz') {
+      h += fire(200, 598);
+      [[150, 626], [172, 612], [228, 612], [250, 626], [128, 640], [272, 640]].forEach(function (t, i) {
+        h += '<circle cx="' + t[0] + '" cy="' + t[1] + '" r="2.2" fill="#ffb347" class="tw" style="animation-delay:' + (i * .5) + 's"/>';
+      });
+    }
+    if (occ === 'christmas') {
+      h += pine(46, 640, 2.1, pal[4]) + pine(92, 652, 1.35, pal[4]) + pine(352, 636, 2.3, pal[4]) + pine(306, 650, 1.4, pal[4]);
+      h += '<circle cx="46" cy="506" r="3.2" fill="#ffd978" class="tw"/><circle cx="352" cy="494" r="3.2" fill="#ffd978" class="tw" style="animation-delay:-1.4s"/>';
+    }
+    svg.innerHTML = h;
+  }
+  function overlay(occ) {
+    var h = '', i;
+    if (occ === 'newroz') {
+      for (i = 0; i < 14; i++) h += '<i class="sp" style="left:' + (46 + (i * 5.9 % 12) - 6) + '%;bottom:22%;--dx:' + ((i % 5 - 2) * 22) + 'px;animation-delay:' + (i * .27).toFixed(2) + 's"></i>';
+    } else if (occ === 'christmas') {
+      for (i = 0; i < 46; i++) { var sz = 2 + (i * 7 % 4); h += '<i class="sn" style="left:' + (i * 37 % 100) + '%;width:' + sz + 'px;height:' + sz + 'px;opacity:' + (.45 + (i % 4) * .14) + ';--sx:' + ((i % 7 - 3) * 14) + 'px;animation-duration:' + (9 + (i * 3 % 9)) + 's;animation-delay:-' + (i * 1.3 % 12).toFixed(1) + 's"></i>'; }
+    } else if (occ === 'newyear') {
+      var cols = ['#ffd27a', '#ff7aa8', '#9ad7ff', '#ffe9a8', '#c4a2ff'], pos = [[24, 60], [76, 55], [50, 67], [90, 38], [10, 40]];
+      pos.forEach(function (p, k) {
+        var lines = '', a;
+        for (a = 0; a < 16; a++) { var r = a * Math.PI / 8; lines += '<line x1="' + (60 + Math.cos(r) * 10).toFixed(1) + '" y1="' + (60 + Math.sin(r) * 10).toFixed(1) + '" x2="' + (60 + Math.cos(r) * 54).toFixed(1) + '" y2="' + (60 + Math.sin(r) * 54).toFixed(1) + '"/>'; }
+        h += '<svg class="fw" viewBox="0 0 120 120" style="position:absolute;left:' + p[0] + '%;top:' + p[1] + '%;width:210px;height:210px;margin:-105px 0 0 -105px;animation-delay:' + (k * .85).toFixed(2) + 's" fill="none" stroke="' + cols[k] + '" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="3 4">' + lines + '</svg>';
+      });
+    }
+    fx.innerHTML = h;
+  }
+
+  /* ---------- tasks: same storage as the calendar page (localStorage "salname.v1") ---------- */
+  var LS = 'salname.v1';
+  function loadAll() { try { var j = JSON.parse(localStorage.getItem(LS) || 'null'); return j && typeof j === 'object' ? j : {}; } catch (e) { return {}; } }
+  function dayRef(j, create) {
+    var n = new Date(), ym = n.getFullYear() + '-' + p2(n.getMonth() + 1), dd = p2(n.getDate());
+    if (!j.data || typeof j.data !== 'object') { if (!create) return null; j.data = {}; }
+    if (!j.data[ym]) { if (!create) return null; j.data[ym] = { m: {}, t: {} }; }
+    var rec = j.data[ym]; if (!rec.t) rec.t = {};
+    if (!Array.isArray(rec.t[dd])) { if (!create) return null; rec.t[dd] = []; }
+    return rec.t[dd];
+  }
+  function todays() { var a = dayRef(loadAll(), false); return a ? a.slice() : []; }
+  function mutate(fn) {
+    var j = loadAll(), arr = dayRef(j, true);
+    fn(arr);
+    arr.sort(function (a, b) { if (!a.t && !b.t) return 0; if (!a.t) return 1; if (!b.t) return -1; return a.t < b.t ? -1 : a.t > b.t ? 1 : 0; });
+    try { localStorage.setItem(LS, JSON.stringify(j)); } catch (e) {}
+  }
+  var h12 = false; try { h12 = localStorage.getItem('clock.h12') === '1'; } catch (e) {}
+  function fmtT(t) { if (!t) return ''; var p = t.split(':'), h = +p[0]; return h12 ? (h % 12 || 12) + ':' + p[1] + (h < 12 ? ' am' : ' pm') : t; }
+  var MAXROWS = 4;
+  function renderTasks() {
+    var all = todays(), list = $('list'), left = all.filter(function (t) { return !t.d; }).length;
+    var shown = all.filter(function (t) { return !t.d; }).concat(all.filter(function (t) { return t.d; })).slice(0, MAXROWS);
+    $('thTitle').textContent = !all.length ? 'Today' : left ? 'Today · ' + left + ' left' : 'Today · all done';
+    list.textContent = '';
+    if (!all.length) { var e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Nothing planned. Tap + to add a task.'; list.appendChild(e); return; }
+    shown.forEach(function (t) {
+      var r = document.createElement('div'); r.className = 'row' + (t.d ? ' done' : '');
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'chk'; b.setAttribute('aria-pressed', t.d ? 'true' : 'false'); b.setAttribute('aria-label', (t.d ? 'Mark not done: ' : 'Mark done: ') + t.x);
+      b.appendChild(document.createElement('i'));
+      b.addEventListener('click', function () { mutate(function (arr) { arr.forEach(function (x) { if (x.id === t.id) x.d = !x.d; }); }); renderTasks(); });
+      var tx = document.createElement('span'); tx.className = 'tx'; tx.textContent = t.x;
+      r.appendChild(b); r.appendChild(tx);
+      if (t.t) { var tm = document.createElement('span'); tm.className = 'tm'; tm.textContent = fmtT(t.t); r.appendChild(tm); }
+      list.appendChild(r);
+    });
+    if (all.length > shown.length) { var m = document.createElement('div'); m.className = 'more'; m.innerHTML = '+' + (all.length - shown.length) + ' more in the <a href="./">calendar</a>'; list.appendChild(m); }
+  }
+  var plus = $('plus'), form = $('addForm');
+  function openForm(on) {
+    form.hidden = !on; plus.setAttribute('aria-expanded', on ? 'true' : 'false'); plus.textContent = on ? '×' : '+';
+    if (on) { $('addText').focus(); } else { $('addText').value = ''; $('addTime').value = ''; }
+  }
+  plus.addEventListener('click', function () { openForm(form.hidden); });
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var x = $('addText').value.trim(), t = $('addTime').value;
+    if (!x) { $('addText').focus(); return; }
+    mutate(function (arr) { arr.push({ id: Math.random().toString(36).slice(2, 9), x: x, d: false, t: t || '', l: 0 }); });
+    $('addText').value = ''; $('addTime').value = ''; $('addText').focus(); renderTasks();
+  });
+  window.addEventListener('storage', function (e) { if (e.key === LS) renderTasks(); });
+
+  /* ---------- text + loop ---------- */
+  var curOcc = null, lastDay = '';
+  function tick() {
+    var now = new Date(), hh = now.getHours(), occ = occasion(now);
+    $('time').innerHTML = h12 ? (hh % 12 || 12) + ':' + p2(now.getMinutes()) + '<small>' + (hh < 12 ? 'AM' : 'PM') + '</small>' : p2(hh) + ':' + p2(now.getMinutes());
+    var dayKey = now.toDateString();
+    if (dayKey !== lastDay) {
+      lastDay = dayKey;
+      var ts = utc(now.getFullYear(), now.getMonth(), now.getDate()), k = toKurdish(ts), dow = now.getDay();
+      $('wdEn').textContent = EN_WD[dow]; $('wdKu').textContent = KU_WD[dow];
+      $('gLat').textContent = now.getDate() + ' ' + G_EN[now.getMonth()] + ' ' + now.getFullYear();
+      $('gKu').textContent = kd(now.getDate()) + ' ' + G_KU[now.getMonth()] + ' ' + kd(now.getFullYear());
+      $('kLat').textContent = k.d + ' ' + K_LAT[k.m] + ' ' + k.y;
+      $('kKu').textContent = kd(k.d) + ' ' + K_KU[k.m] + ' ' + kd(k.y);
+      renderTasks();
+    }
+    if (occ !== curOcc) {
+      curOcc = occ; lastKey = ''; overlay(occ);
+      var o = $('occ');
+      if (occ) {
+        o.innerHTML = '<span>' + OCC[occ].en + '</span><span class="ku" lang="ckb" dir="rtl">' + OCC[occ].ku + '</span>' +
+          (occ === 'newroz' ? '<span class="tri"><i style="background:#d6403a"></i><i style="background:#f4d35e"></i><i style="background:#3aa05a"></i></span>' : '');
+        o.classList.add('on');
+      } else { o.classList.remove('on'); o.innerHTML = ''; }
+    }
+    draw(now, occ);
+  }
+  function flip() { h12 = !h12; try { localStorage.setItem('clock.h12', h12 ? '1' : '0'); } catch (e) {} tick(); renderTasks(); }
+  $('time').addEventListener('click', flip);
+  $('time').addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+  tick();
+  (function loop() { setTimeout(function () { tick(); loop(); }, 1000 - (Date.now() % 1000) + 20); })();
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { tick(); renderTasks(); } });
+  window.addEventListener('hashchange', function () { curOcc = null; tick(); });
+
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+})();
+</script>
+</body>
+</html>
